@@ -50,7 +50,7 @@ export default class Stock extends React.Component {
         var that = this;
         for (var i = 0; i < this.timeRef.current.childNodes.length; i++) {
             var child = this.timeRef.current.childNodes[i]
-            if (child.id == time) {
+            if (child.id == time_name) {
                 child.style.backgroundColor = "#178275"
             }
             else {
@@ -120,7 +120,7 @@ export default class Stock extends React.Component {
     componentDidMount() {
         for (var i = 0; i < this.timeRef.current.childNodes.length; i++) {
             var child = this.timeRef.current.childNodes[i]
-            if (child.id == "oneMonthButton") {
+            if (child.id == "sixMonthButton") {
                 child.style.backgroundColor = "#178275"
             }
             else {
@@ -164,7 +164,7 @@ export default class Stock extends React.Component {
                     <button onClick={(e) => { this.selectTime(e, "oneMonthButton"); }} tag="time_button" id="oneMonthButton" className="btn btn-lg btn-primary" >1 Month</button>
                     <button onClick={(e) => { this.selectTime(e, "sixMonthButton"); }} tag="time_button" id="sixMonthButton" className="btn btn-lg btn-primary" >6 Months</button>
                     <button onClick={(e) => { this.selectTime(e, "twelveMonthButton"); }} tag="time_button" id="twelveMonthButton" className="btn btn-lg btn-primary" >12 Months</button>
-                    <div style={{ fontSize: 24, paddingLeft: 80 }}>Price: {this.state.current_price} </div>
+                    <div style={{ fontSize: 24, paddingLeft: 80 }}> {"Price: " + this.state.current_price} </div>
                 </div>
                 <ResponsiveContainer style={{ display: 'flex', paddingTop: 100 }} width="90%" height="80%">
                     <AreaChart ref={this.lineChartRef}

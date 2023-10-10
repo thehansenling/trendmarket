@@ -32,7 +32,15 @@ export default class User extends React.Component {
     }
 
     stocksChanged(names) {
-        var graph_length = this.props.data.total_graph_data.length
+        var graph_length = 0;
+        if (this.state.graph_data) {
+            for (var key in this.state.graph_data) {
+                //can use min length?
+                console.log(key)
+                graph_length = this.state.graph_data[key].length
+                break
+            }
+        }
         var display_data = [];
         for (var i = 0; i < graph_length; i++) {
             var time_total = 0
@@ -42,10 +50,10 @@ export default class User extends React.Component {
             for (var name_index in names) {
             
                 var name = names[name_index]
+                console.log(name)
                 time = this.state.graph_data[name][i].time
                 time_total += this.state.graph_data[name][i].value * this.getStockAmount(time * 1000, name)
                 stock_count += this.props.data.stock_info[name]
-                time = this.state.graph_data[name][i].time
                 formattedTime = this.state.graph_data[name][i].formattedTime
             }
             
@@ -59,7 +67,7 @@ export default class User extends React.Component {
         var that = this;
         for (var i = 0; i < this.timeRef.current.childNodes.length; i++) {
             var child = this.timeRef.current.childNodes[i]
-            if (child.id == time) {
+            if (child.id == time_name) {
                 child.style.backgroundColor = "#178275"
             }
             else {
@@ -95,7 +103,7 @@ export default class User extends React.Component {
                 that.setState({
                     graph_data: data.data.graph_data,
                 });// response.graph_data });
-
+                that.stocksChanged(that.state.stocks)
             });
     }
 
@@ -106,10 +114,11 @@ export default class User extends React.Component {
             names.push(key)
         }
         this.stocksChanged(names)
+        this.setState({stocks: names})
         console.log(this.timeRef)
         for (var i = 0; i < this.timeRef.current.childNodes.length; i++) {
             var child = this.timeRef.current.childNodes[i]
-            if (child.id == "oneMonthButton") {
+            if (child.id == "sixMonthButton") {
                 child.style.backgroundColor = "#178275"
             }
             else {
