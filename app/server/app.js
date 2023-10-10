@@ -22,6 +22,7 @@ import Home from '../components/Home.js';
 import { StaticRouter } from "react-router-dom/server";
 import mixpanel from 'mixpanel-browser';
 import { MixpanelProvider, MixpanelConsumer } from 'react-mixpanel';
+import { resetWarningCache } from 'prop-types';
 
 app.use(publicPath);
 app.use(cookieParser());
@@ -197,55 +198,208 @@ app.post('/', (req, res) => {
 })
 
 app.get('/stock/:stock', function (req, res) {
-	var user_sql = "SELECT * from accounts WHERE username = '" + req.cookies.username + "'";
-	connection.query(user_sql, function (err, result) {
-		var funds = result[0].funds
-		googleTrends.interestOverTime({ keyword: req.params.stock, startTime: new Date(Date.now() - 2.628e+9), endTime: new Date(), granularTimeResolution: true })
-			.then(function (results) {
-				//console.log('These results are awesome', results);
-				var jsonresults = JSON.parse(results);
-				var google_data = jsonresults["default"]["timelineData"]
-				var graph_data = []
-				console.log(google_data)
 
-				for (let i = 0; i < google_data.length; i++) {
-					var entry = google_data[i]
-					console.log(entry)
-					if (entry.value == undefined) continue
-					var date = new Date(parseFloat(entry.time))
-					graph_data.push(
-						{
-							time: entry.formattedTime.slice(0, -6),
-							value: entry.value[0]
-						}
-					)
+	
+	var user_sql = "SELECT * from accounts WHERE username = '" + req.cookies.username + "'"; 
+	connection.query(user_sql, function (err, result) {
+		console.log(result)
+		var funds = 0
+		if (result.length > 0) {
+			funds = result[0].funds
+		}
+		var user_stock_sql = "SELECT * from ledger WHERE username = '" + req.cookies.username + "' AND stock = '" + req.params.stock + "'"
+		connection.query(user_stock_sql, function (err, result) {
+			var user_stock_price = 0 
+			var user_stocks = 0
+			if (result.length > 0) {
+				for (var i = 0; i < result.length; i++) {
+					console.log(result)
+					user_stock_price += result[i].price * result[i].amount
+					user_stocks += result[i].amount
 				}
-				var data = {
-					graph_data: graph_data,
-					stock_name: req.params.stock,
-					username: req.cookies.username,
-					funds: funds
-				}
-				//res.send(html);
-				console.log(data)
-				var html = renderPage(req.url, data)
-				res.send(html);
-			})
-			.catch(function (err) {
-				console.error('Oh no there was an error', err);
-			});
+			}
+			googleTrends.interestOverTime({ keyword: req.params.stock, startTime: new Date(Date.now() - 8.64e+7), endTime: new Date(), granularTimeResolution: true })
+				.then(function (day_results) {
+					var day_jsonresults = JSON.parse(day_results);
+					var day_google_data = day_jsonresults["default"]["timelineData"]
+					var day_graph_data = []
+					//console.log(day_google_data)
+
+					for (let i = 0; i < day_google_data.length; i++) {
+						var day_entry = day_google_data[i]
+						//console.log(day_entry)
+						if (day_entry.value == undefined) continue
+						var date = new Date(parseFloat(day_entry.time))
+						day_graph_data.push(
+							{
+								time: day_entry.formattedTime.slice(0, -6),
+								value: day_entry.value[0]
+							}
+						)
+					}
+					googleTrends.interestOverTime({ keyword: req.params.stock, startTime: new Date(Date.now() - 2.628e+9), endTime: new Date(), granularTimeResolution: true })
+						.then(function (results) {
+
+							//console.log('These results are awesome', results);
+							var jsonresults = JSON.parse(results);
+							var google_data = jsonresults["default"]["timelineData"]
+							var graph_data = []
+							//console.log(google_data)
+
+							for (let i = 0; i < google_data.length; i++) {
+								var entry = google_data[i]
+								//console.log(entry)
+								if (entry.value == undefined) continue
+								var date = new Date(parseFloat(entry.time))
+								graph_data.push(
+									{
+										time: entry.formattedTime.slice(0, -6),
+										value: entry.value[0]
+									}
+								)
+							}
+							console.log(user_stock_price)
+							console.log(user_stocks)
+							var user_graph_data = []
+							for (var i = 0; i < graph_data.length; i++) {
+								user_graph_data.push({ ...graph_data[i] })
+								graph_data[i].user_value = user_stock_price / user_stocks
+							}
+							var current_price = 0
+							if (graph_data[graph_data.length - 1] != undefined) {
+								current_price = graph_data[graph_data.length - 1]
+							}
+							console.log(graph_data)
+							var data = {
+								graph_data: graph_data,
+								stock_name: req.params.stock,
+								username: req.cookies.username,
+								current_price: current_price,
+								funds: funds
+							}
+							//res.send(html);
+							//console.log(graph_data)
+							var html = renderPage(req.url, data)
+							res.send(html);
+						});
+				})
+				.catch(function (err) {
+					console.error('Oh no there was an error', err);
+				});
+		});
 	});
 
 
 });
 
-app.post('/buy', function (req, res) {
-	console.log(req.body)
-	var buy_sql = "INSERT INTO accounts (username, amount, price, operation, ) VALUES ('" + req.cookies.username + "', '" + hash + "', '" + req.body.email + "')";
-	connection.query(username_check_sql, function (err, result) {
+app.post('/current_price', function (req, res) {
+	googleTrends.interestOverTime({ keyword: req.params.stock, startTime: new Date(Date.now() - 2.628e+9), endTime: new Date(), granularTimeResolution: true })
+		.then(function (day_results) {
+			var day_jsonresults = JSON.parse(day_results);
+			var day_google_data = day_jsonresults["default"]["timelineData"]
+			var day_graph_data = []
+			console.log(day_google_data)
 
-	})
+			for (let i = 0; i < day_google_data.length; i++) {
+				var day_entry = day_google_data[i]
+				//console.log(day_entry)
+				if (day_entry.value == undefined) continue
+				var date = new Date(parseFloat(day_entry.time))
+				day_graph_data.push(
+					{
+						time: day_entry.formattedTime.slice(0, -6),
+						value: day_entry.value[0]
+					}
+				)
+			}
+			res.send({ current_price: day_graph_data[0].value });
+		});
 });
+
+app.post('/buy', function (req, res) {
+
+	var select_ledger_sql = "SELECT * FROM ledger WHERE username = '" + req.cookies.username + "' and stock = '" + req.body.stock + "'";
+	connection.query(select_ledger_sql, function (err, ledger_result) {
+		var update_ledger_sql = "INSERT INTO ledger (username, stock, price, type, amount, timestamp) VALUES ('" + req.cookies.username + "', '" + req.body.stock + "', " + req.body.price.toString() + ", '" + req.body.operation + "', " + req.body.amount + ", " + Date.now() + ")"
+		if (ledger_result.length > 0) {
+			console.log(ledger_result)
+			var ledger = ledger_result[0]//JSON.parse(result[0])
+			update_ledger_sql = "UPDATE ledger SET amount = " + (parseInt(ledger.amount) + parseInt(req.body.amount)).toString() + " WHERE username = '" + req.cookies.username + "'";
+		}
+		connection.query(update_ledger_sql, function (err, result) {
+		})
+		console.log(req.body)
+
+		var total_owned = req.body.amount;
+		if (ledger_result.length> 0) {
+			total_owned += ledger_result[0].amount
+			if (req.body.operation == "SELL") {
+				total_owned -= 2 * req.body.amount
+			}
+		}
+
+		var buy_sql = "INSERT INTO transactions (username, stock, amount, price, operation, total_owned) VALUES ('" + req.cookies.username + "', '" + req.body.stock + "', "  + req.body.amount + ", " + req.body.price + ", '" + req.body.operation + "', " + total_owned + ")";
+		console.log(buy_sql)
+		connection.query(buy_sql, function (err, result) {
+			var funds = req.body.funds - req.body.amount * req.body.price
+			var update_user_sql = "UPDATE accounts SET funds = " + funds + " WHERE username = '" + req.cookies.username + "'";
+			console.log(update_user_sql)
+			if (funds < 0) {
+				res.send({ funds: req.body.funds, message: "FAILURE" })
+			} else {
+				googleTrends.interestOverTime({ keyword: req.body.stock, startTime: new Date(Date.now() - 2.628e+9), endTime: new Date(), granularTimeResolution: true })
+					.then(function (google_results) {
+						var jsonresults = JSON.parse(google_results);
+						var google_data = jsonresults["default"]["timelineData"]
+						var graph_data = []
+						//console.log(google_data)
+
+						for (let i = 0; i < google_data.length; i++) {
+							var entry = google_data[i]
+							//console.log(entry)
+							if (entry.value == undefined) continue
+							var date = new Date(parseFloat(entry.time))
+							graph_data.push(
+								{
+									time: entry.formattedTime.slice(0, -6),
+									value: entry.value[0]
+								}
+							)
+						}
+						if (true || graph_data[graph_data.length - 1] == req.body.price) {
+							//updateLedger(req.cookies.username, req.body.price, req.body.stock, req.body.amount, req.body.operation)
+							connection.query(update_user_sql, function (err, result) {
+								res.send({ funds: funds, message: "SUCCESS2" })
+							})
+
+						} else {
+							res.send({ funds: req.body.funds, message: "FAILURE2" })
+						}
+
+					})
+			}
+
+		})
+	});
+});
+
+function getInterests(stocks, stock_data, time, callback) {
+	if (stocks.length <= 0) {
+		callback(stock_data)
+		return;
+	}
+	console.log(stocks)
+	var search_stock = stocks.pop()
+	console.log(search_stock)
+
+	googleTrends.interestOverTime({ keyword: search_stock, startTime: new Date(Date.now() - time), endTime: new Date(), granularTimeResolution: true })
+		.then(function (results) {
+			var jsonresults = JSON.parse(results);
+
+			stock_data[search_stock] = jsonresults["default"]["timelineData"]
+			getInterests(stocks, stock_data, time, callback)
+		});
+}
 
 app.post('/get_data', function (req, res) {
 	console.log("GETDATA")
@@ -256,42 +410,178 @@ app.post('/get_data', function (req, res) {
 		start_date = new Date(Date.now() - (2.628e+9 * 12))
 	}
 	console.log(req.body)
-	googleTrends.interestOverTime({ keyword: req.body.stock, startTime: start_date, endTime: new Date(), granularTimeResolution: true })
-		.then(function (results) {
-			//console.log('These results are awesome', results);
-			var jsonresults = JSON.parse(results);
-			var google_data = jsonresults["default"]["timelineData"]
-			var graph_data = []
-			console.log(google_data)
-
-			for (let i = 0; i < google_data.length; i++) {
-				var entry = google_data[i]
-				console.log(entry)
-				if (entry.value == undefined) continue
-				var date = new Date(parseFloat(entry.time))
-				graph_data.push(
-					{
-						time: entry.formattedTime.slice(0, -6),
-						value: entry.value[0]
-					}
-				)
-			}
-			var data = {
-				graph_data: graph_data,
-				stock_name: req.body.stock,
-				username: req.cookies.username
-			}
-			//res.send(html);
-			console.log(data)
-			res.send({ graph_data: graph_data })
-		})
-		.catch(function (err) {
-			console.error('Oh no there was an error', err);
-		});
+	var stock_data = {}
 	
+	getInterests(req.body.stocks, stock_data, req.body.time, function () {
+		//console.log('These results are awesome', results);
+		var total_data = {};
+		var graph_data = {};
+		for (var key in stock_data) {
+			//console.log(Object.keys(stock_data))
+			//console.log(stock_data[key].length)
+			graph_data[key] = []
+			for (var i = 0; i < stock_data[key].length; i++) {
+				graph_data[key].push({
+					value: stock_data[key][i].value[0],
+					time: stock_data[key][i].time,
+					formattedTime: stock_data[key][i].formattedTime
+				})
+			}
+		}
+
+		//var jsonresults = JSON.parse(results);
+		//var google_data = jsonresults["default"]["timelineData"]
+		//var graph_data = []
+		//console.log(google_data)
+
+		//for (let i = 0; i < google_data.length; i++) {
+		//	var entry = google_data[i]
+		//	console.log(entry)
+		//	if (entry.value == undefined) continue
+		//	var date = new Date(parseFloat(entry.time))
+		//	graph_data.push(
+		//		{
+		//			time: entry.formattedTime.slice(0, -6),
+		//			value: entry.value[0]
+		//		}
+		//	)
+		//}
+		var data = {
+			graph_data: graph_data,
+			stock_name: req.body.stock,
+			username: req.cookies.username
+		}
+		//res.send(html);
+		console.log(data)
+		res.send({ data: data })
+	})
 
 
+	//googleTrends.interestOverTime({ keyword: req.body.stocks, startTime: start_date, endTime: new Date(), granularTimeResolution: true })
+	//	.then(function (results) {
+	//		//console.log('These results are awesome', results);
+	//		var jsonresults = JSON.parse(results);
+	//		var google_data = jsonresults["default"]["timelineData"]
+	//		var graph_data = []
+	//		console.log(google_data)
 
+	//		for (let i = 0; i < google_data.length; i++) {
+	//			var entry = google_data[i]
+	//			console.log(entry)
+	//			if (entry.value == undefined) continue
+	//			var date = new Date(parseFloat(entry.time))
+	//			graph_data.push(
+	//				{
+	//					time: entry.formattedTime.slice(0, -6),
+	//					value: entry.value[0]
+	//				}
+	//			)
+	//		}
+	//		var data = {
+	//			graph_data: graph_data,
+	//			stock_name: req.body.stock,
+	//			username: req.cookies.username
+	//		}
+	//		//res.send(html);
+	//		console.log(data)
+	//		res.send({ graph_data: graph_data })
+	//	})
+	//	.catch(function (err) {
+	//		console.error('Oh no there was an error', err);
+	//	});
 })
+
+app.get('/user/:user', function (req, res) {
+	var user_sql = "SELECT * from accounts WHERE username = '" + req.params.user + "'";
+	var user_data = {}
+	connection.query(user_sql, function (err, user_result) {
+		var search_date = (Date.now() - 1.577e+10)
+		console.log(search_date)
+		var transactions_sql = "SELECT* from transactions WHERE username = '" + req.params.user + "' AND timestamp > " + search_date.toString() + " ORDER BY timestamp ASC" 
+		console.log(transactions_sql)
+		connection.query(transactions_sql, function (err, transactions_result) {
+			console.log(transactions_result)
+			var transactions_log = [{timestamp:0}]
+			
+
+			for (var i = 0; i < transactions_result.length; i++) {
+				var transaction_entry = {}
+				transaction_entry["timestamp"] = transactions_result[i].timestamp
+				var stock_entry = {}
+				if (transactions_log[i].stocks == undefined) {
+					
+					stock_entry[transactions_result[i].stock] = transactions_result[i].amount
+					transaction_entry["stocks"] = stock_entry
+				} else {
+					stock_entry = { ...transactions_log[i]["stocks"] }
+					stock_entry[transactions_result[i].stock] = transactions_result[i].amount
+					transaction_entry["stocks"] = stock_entry
+				}
+				transactions_log.push(transaction_entry)
+			}
+			console.log(transactions_log)
+			var user_stock_sql = "SELECT * from ledger WHERE username = '" + req.params.user + "'"
+			connection.query(user_stock_sql, function (err, stock_result) {
+				var stock_info = {}
+				for (var i = 0; i < stock_result.length; i++) {
+					if (stock_result[i].stock in stock_info) {
+						stock_info[stock_result[i].stock] += stock_result[i].amount
+					}
+					else {
+						stock_info[stock_result[i].stock] = stock_result[i].amount
+					}
+				}
+				var stock_data = {}
+				getInterests(Object.keys(stock_info), stock_data, 1.577e+10, function () {
+					var total_data = {};
+					var graph_data = {}
+					//console.log("TEST")
+					//console.log(stock_data)
+					//console.log(stock_data["taylor swift"])
+					for (var key in stock_data) {
+						//console.log(Object.keys(stock_data))
+						//console.log(stock_data[key].length)
+						graph_data[key] = []
+						for (var i = 0; i < stock_data[key].length; i++) {
+							graph_data[key].push({
+								value: stock_data[key][i].value * stock_info[key],
+								time: parseInt(stock_data[key][i].time),
+								formattedTime: stock_data[key][i].formattedTime
+							})
+							if (stock_data[key][i].time in graph_data) {
+								total_data[stock_data[key][i].time] += stock_data[key][i].value * stock_info[key]
+							} else {
+
+								total_data[stock_data[key][i].time] = stock_data[key][i].value * stock_info[key]
+							}
+						}
+					}
+					var total_graph_data = []
+					for (var key in total_data) {
+						var entry = {}
+						entry["time"] = key
+						entry["formattedTime"] = key
+						entry["value"] = total_data[key]
+						var jsonentry = JSON.parse(JSON.stringify(entry))
+						total_graph_data.push(jsonentry)
+					}
+					console.log(graph_data["taylor swift"])
+					var data = {
+						username: req.params.user,
+						graph_data: graph_data,
+						total_graph_data: total_graph_data,
+						stock_info: stock_info,
+						transactions_log: transactions_log
+					}
+					var html = renderPage(req.url, data)
+					res.send(html);
+				})
+
+
+
+			})
+		})
+	});
+});
 
 module.exports = app;

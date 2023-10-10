@@ -14,6 +14,7 @@ import Home from './home.js'
 import Login from './login.js'
 import Register from './register.js'
 import Stock from './stock.js'
+import User from './User.js'
 import StandardHeader from './standard_header.js'
 import mixpanel from 'mixpanel-browser';
 import { MixpanelProvider, MixpanelConsumer } from 'react-mixpanel';
@@ -50,6 +51,7 @@ export default class App extends React.Component {
 					<Route exact path="/login" element={<Login data={this.props.data} mixpanel={mixpanel} />} />
 					<Route exact path="/register" element={<Register data={this.props.data} mixpanel={mixpanel} />} />
 					<Route exact path="/stock/:stock_id" element={<Stock data={this.props.data} mixpanel={mixpanel} />} />
+					<Route exact path="/user/:user" element={<User data={this.props.data} mixpanel={mixpanel} />} />
 				</Routes>
 				<script type="text/javascript" src="../public/bundle.js"> </script>
 			</div>

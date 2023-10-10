@@ -2,92 +2,13 @@ var React = require('react');
 var ReactDOM = require('react-dom')
 import {isMobile} from 'react-device-detect';
 
-function SortSearch(users, artists, songs, albums)
-{
-	var search_list = [];
-
-	for (var key in users)
-	{
-		var user_display = users[key].username;
-		var user_url = "/user/" + users[key].username;
-		search_list.push([user_display, user_url]);
- 	}
-
- 	for (var key in artists)
- 	{
-	 	var artist_display = artists[key].artist;
-	 	var artist_url = "/artist/" + artists[key].artist
-	 	search_list.push([artist_display, artist_url]);
-	}
-
-	for (var key in songs)
-	{
-	 	var song_display = songs[key].song;
-	 	var song_url = "/post/" + songs[key].artist + "/" + songs[key].song;
-	 	search_list.push([song_display, song_url]);
- 	}
-
- 	for (var key in albums)
- 	{
-	 	var album_display = albums[key].album;
-	 	var album_url = "/album/" + albums[key].artist + "/" + albums[key].album;
-	 	search_list.push([album_display, album_url]);
- 	}
-
-    search_list.sort(function(a, b){
-    	if (a[0] > b[0])
-        {
-        	return 1;
-        }
-        return -1;
-    });
-    return search_list;
-}
-
-class SearchItem extends React.Component {
-
-	constructor(props) {
-		super(props);
-		this.item_list = [];
-	}
-
-	clearItems()
-	{
-		this.item_list = [];
-		this.forceUpdate();
-	}
-
-	renderItem(item, url)
-	{
-		this.item_list.push(
-			<div
-				tabindex
-				className="searchItem"
-				onClick={() => {window.location.href = url}}
-			>
-				{item}
-			</div>
-		);
-		this.forceUpdate();
-	}
-
-	render()
-	{
-		return this.item_list.length > 0 ?
-			(
-				<div className="searchItems">
-					{this.item_list}
-				</div>
-			) : null;
-	}
-};
-
 class SearchList extends React.Component {
 
 	constructor(props)
 	{
 		super(props);
 		this.search_list = React.createRef();
+		this.searchRef = React.createRef();
 	}
 
 	handleChange()
@@ -95,26 +16,20 @@ class SearchList extends React.Component {
 		var input = event.target.value;
 		var that = this;
 
-		fetch("/search", {
-			method: "POST",
-			headers: {
-				Accept: 'application/json',
-				'Authorization': 'Basic',
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({type: "search", text: input}),
-		}).then(function(response) { return response.json();}
-		).then(function (data) {
-			var search_results = SortSearch(data.users, data.artists, data.songs, data.albums);
-			that.search_list.current.clearItems();
-			for (var key in search_results)
-			{
-				that.search_list.current.renderItem(search_results[key][0], search_results[key][1]);
-			}
-	 	})
 	}
 
-
+	componentDidMount() {
+		console.log(this.searchRef)
+		var that = this
+		this.searchRef.current.addEventListener("keypress", function (event) {
+			// If the user presses the "Enter" key on the keyboard
+			if (event.key === "Enter") {
+				// Cancel the default action, if needed
+				event.preventDefault();
+				window.location.href = "/stock/" + that.searchRef.current.value
+			}
+		});
+	}
 
 	render ()
 	{
@@ -133,13 +48,12 @@ class SearchList extends React.Component {
 		}
 		return(
 			<div style = {search_height} className="searchBarContainer">
-				<input style = {{height:'100%'}}
+				<input style={{ height: '100%' }}
+					ref={ this.searchRef }
 					className={search_class}
-					onChange={this.handleChange.bind(this)}
 					placeholder='Search'
 					type='text'
 					/>
-				<SearchItem ref={this.search_list} />
 			</div>
 		);
 
@@ -205,71 +119,6 @@ export default class StandardHeader extends React.Component {
 
 	componentDidMount()
 	{
-		//var that = this;
-	 //   fetch('/notifications', {
-	 //       method: "POST",
-	 //       headers: {
-	 //       	Accept: 'application/json',
-	 //       	'Authorization': 'Basic',
-	 //       	'Content-Type': 'application/json',
-	 //       },
-	 //   })
-	 //   .then(function(response) { return response.json();})
-	 //   .then(function (data) {
-
-	 //   	var notifications_size = '24px'
-	 //   	var notifications_font_size = '12pt'
-	 //   	if (isMobile)
-	 //   	{
-	 //   		notifications_size = '60px'
-	 //   		notifications_font_size = '2.8em'
-	 //   	}
-
-	 //   	that.props.notifications = data.notifications
-		//  	if (that.props.notifications != undefined && that.props.notifications.length > 0)
-		//  	{
-		//	  	for (var i = 0; i < that.props.notifications.length; ++i)
-		//	  	{
-		//	  		var comment_text = that.props.notifications[i].num_comments + ", comments"
-		//	  		var likes_text = that.props.notifications[i].num_likes + " likes"
-
-		//	  		if (that.props.notifications[i].num_comments == 0)
-		//	  		{
-		//	  			comment_text = ""
-		//	  		}
-		//	  		if (that.props.notifications[i].num_likes == 0)
-		//	  		{
-		//	  			likes_text = ""
-		//	  			if (comment_text.length != 0)
-		//	  			{
-		//	  				comment_text = comment_text.substring(0, comment_text.indexOf(",")) + comment_text.substring(comment_text.indexOf(",") + 1, comment_text.length)
-		//	  			}
-		//	  		}
-		//	  		var notification_text = "Your post " + that.props.notifications[i].name + " got " + likes_text + comment_text
-		//	  		var notification_url = "/user/" + that.props.notifications[i].username + "/" + that.props.notifications[i].post_id
-		//	  		if (that.props.notifications[i].tag > 0)
-		//	  		{
-		//	  			notification_text = that.props.notifications[i].tagger + " tagged you in a post"
-		//	  			if (that.props.notifications[i].tag == 1)
-		//	  			{
-		//	  				notification_url = "/user/" + that.props.notifications[i].tagger + "/" + that.props.notifications[i].post_id
-		//	  			}
-		//	  			else
-		//	  			{
-		//	  				notification_url = "/user/" + that.props.notifications[i].name + "/" + that.props.notifications[i].post_id
-		//	  			}
-
-		//	  		}
-		//	  		that.dropdown_content.push(<div key = {that.props.notifications[i].post_id} id = {that.props.notifications[i].post_id} className = "dropdownelement" style = {{background:'white', border: '1px solid #F8F8F8', backgroundColor:'#F8F8F8'}}>
-		//	  			<a className = "dropdownelement" href = {notification_url} style = {{textDecoration:'none', fontFamily:'Roboto'}}>{notification_text} </a>
-		//	  			 <button key = {that.props.notifications[i].post_id} style = {{right:'0px', position:'absolute', borderRadius:'0px', height:'20px'}} className = "dropdownelement grayButton" onClick = {that.removeNotification.bind(that, that.props.notifications[i].post_id)}> X </button>
-		//	  			</div>)
-		//	  	}
-		//	  	that.notification_div = <div className = "notifications" ref = {that.notificationsRef} onClick = {that.toggleNotifications.bind(that)} style = {{marginRight: '10px', fontWeight:'bold', fontSize:notifications_font_size, color: "#178275", width:notifications_size, height:notifications_size, textAlign:'center', backgroundColor:'white', borderRadius:'50%', position:'relative',display:'flex', justifyContent:'center', alignItems:'center'}}> {that.props.notifications.length}</div>
-		//  	}
-		//  	that.forceUpdate()
-	 //	})
-		//window.addEventListener('mousedown', this.handleClickOutside.bind(this));
 	}
 
 	componentWillUnmount()
