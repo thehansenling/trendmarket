@@ -1,23 +1,19 @@
 import React from 'react';
+import Graph from './CreateGraph.js'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default class Home extends React.Component {
 	constructor(props)
 	{
 		super(props);
-		this.handleClick = this.handleClick.bind(this)
-	}
-
-	handleClick()
-	{
-		alert("SDHSDHSDFG");
-		console.log("PLERASER");
+        console.log(props)
 	}
 
 	render ()
 	{
 		return (
-			<div style={{ display: 'flex', paddingTop: 100 }}>
-				<button type="submit" id="submitButton" className="btn btn-lg btn-primary" onClick={this.handleClick}>Register</button>
+			<div>
+				<Graph data = {this.props.data}/>
 			</div>);
 	}
 }

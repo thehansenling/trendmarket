@@ -72,13 +72,50 @@ function renderPage(url, data) {
 }
 
 app.get('/', function (req, res) {
-	var data = {
-		login_message: "",
-		username: req.cookies.username
-	}
-	var html = renderPage(req.url, data)
-	res.send(html);
-});
+
+	var search_date = (Date.now() - 1.577e+10)
+	console.log(search_date)
+	var transactions_sql = "SELECT DISTINCT stock from transactions ORDER BY timestamp DESC LIMIT 5"
+	console.log(transactions_sql)
+	connection.query(transactions_sql, function (err, transactions_result) {
+		console.log(transactions_result)
+		var stocks = []
+		for (var i = 0; i < transactions_result.length; i++)
+		{
+			stocks.push(transactions_result[i].stock)
+		}
+
+		var stock_data = {}
+		getInterests(stocks, stock_data, 1.577e+10, function () {
+			var graph_data = []
+			
+			console.log(stock_data)
+			var stock_names = []
+			var stocks_length = 0
+			//bad hansen
+			for (var key in stock_data) {
+				stock_names.push(key)
+				stocks_length = stock_data[key].length
+			}
+			for (var i = 0; i < stocks_length; i++) {
+				var entry = {}
+				for (var key in stock_data) {
+					entry[key] = stock_data[key][i].value[0]
+					entry["time"] = stock_data[key][i].time
+				}
+				graph_data.push(entry)
+			}
+			var data = { graph_data: graph_data,
+					stocks: stock_names }
+			console.log(data)
+			var html = renderPage(req.url, data)
+			res.send(html);
+
+		})
+	})
+
+
+})
 
 
 app.get('/login', function(req, res)
@@ -275,6 +312,7 @@ app.get('/stock/:stock', function (req, res) {
 								stock_name: req.params.stock,
 								username: req.cookies.username,
 								current_price: current_price,
+								user_stocks: user_stocks,
 								funds: funds
 							}
 							//res.send(html);
@@ -324,7 +362,7 @@ app.post('/buy', function (req, res) {
 		if (ledger_result.length > 0) {
 			console.log(ledger_result)
 			var ledger = ledger_result[0]//JSON.parse(result[0])
-			update_ledger_sql = "UPDATE ledger SET amount = " + (parseInt(ledger.amount) + parseInt(req.body.amount)).toString() + " WHERE username = '" + req.cookies.username + "'";
+			update_ledger_sql = "UPDATE ledger SET amount = " + (parseInt(ledger.amount) + parseInt(req.body.amount)).toString() + " WHERE username = '" + req.cookies.username + "' AND stock = '" + req.body.stock + "'";
 		}
 		connection.query(update_ledger_sql, function (err, result) {
 		})
@@ -332,16 +370,18 @@ app.post('/buy', function (req, res) {
 
 		var total_owned = req.body.amount;
 		if (ledger_result.length> 0) {
-			total_owned += ledger_result[0].amount
+			total_owned += ledger_result[0].amount	
 			if (req.body.operation == "SELL") {
 				total_owned -= 2 * req.body.amount
 			}
 		}
-
-		var buy_sql = "INSERT INTO transactions (username, stock, amount, price, operation, total_owned) VALUES ('" + req.cookies.username + "', '" + req.body.stock + "', "  + req.body.amount + ", " + req.body.price + ", '" + req.body.operation + "', " + total_owned + ")";
+		console.log(req.body.amount)
+		var funds = req.body.funds - req.body.amount * req.body.price
+		var buy_sql = "INSERT INTO transactions (username, stock, amount, price, operation, total_owned, timestamp, funds_remaining) VALUES ('" + 
+		req.cookies.username + "', '" + req.body.stock + "', "  + req.body.amount + ", " + req.body.price + ", '" + req.body.operation + "', " + total_owned + ", " + Date.now() +", " + funds + ")";
 		console.log(buy_sql)
 		connection.query(buy_sql, function (err, result) {
-			var funds = req.body.funds - req.body.amount * req.body.price
+			
 			var update_user_sql = "UPDATE accounts SET funds = " + funds + " WHERE username = '" + req.cookies.username + "'";
 			console.log(update_user_sql)
 			if (funds < 0) {
@@ -501,12 +541,13 @@ app.get('/user/:user', function (req, res) {
 		console.log(transactions_sql)
 		connection.query(transactions_sql, function (err, transactions_result) {
 			console.log(transactions_result)
-			var transactions_log = [{timestamp:0}]
+			var transactions_log = [{timestamp:0, funds_remaining: 0}]
 			
 
 			for (var i = 0; i < transactions_result.length; i++) {
 				var transaction_entry = {}
 				transaction_entry["timestamp"] = transactions_result[i].timestamp
+				transaction_entry["funds_remaining"] = transactions_result[i].funds_remaining
 				var stock_entry = {}
 				if (transactions_log[i].stocks == undefined) {
 					

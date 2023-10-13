@@ -1,6 +1,4 @@
 import React from 'react';
-
-
 import StockList from './StockList.js'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 export default class User extends React.Component {
@@ -31,6 +29,19 @@ export default class User extends React.Component {
         return 0
     }
 
+    getFundAmount(time, stock) {
+        for (var i = 0; i < this.props.data.transactions_log.length; i++) {
+            if (time >= this.props.data.transactions_log[i].timestamp &&
+                (i >= this.props.data.transactions_log.length - 1 || time < this.props.data.transactions_log[i + 1].timestamp)) {
+                if (this.props.data.transactions_log[i]["stocks"] == undefined || this.props.data.transactions_log[i]["stocks"][stock] == undefined) {
+                    return 0
+                }
+                return this.props.data.transactions_log[i]["funds_remaining"]
+            }
+        }
+        return 0
+    }
+
     stocksChanged(names) {
         var graph_length = 0;
         if (this.state.graph_data) {
@@ -52,7 +63,7 @@ export default class User extends React.Component {
                 var name = names[name_index]
                 console.log(name)
                 time = this.state.graph_data[name][i].time
-                time_total += this.state.graph_data[name][i].value * this.getStockAmount(time * 1000, name)
+                time_total += this.state.graph_data[name][i].value * this.getStockAmount(time * 1000, name) + this.getFundAmount(time*1000, name)
                 stock_count += this.props.data.stock_info[name]
                 formattedTime = this.state.graph_data[name][i].formattedTime
             }
@@ -80,6 +91,10 @@ export default class User extends React.Component {
             time = 2.628e+9 * 12
         } else if (time_name == "sixMonthButton") {
             time = 2.628e+9 * 6
+        } else if (time_name == "oneWeekButton") {
+            time = 8.64e+7 * 7
+        } else if (time_name == "oneDayButton") {
+            time = 8.64e+7
         }
         var stock_names = []
         for (var key in this.props.data.stock_info) {
@@ -127,8 +142,6 @@ export default class User extends React.Component {
         }
     }
 
-
-
 	render ()
 	{
         return (
@@ -137,6 +150,8 @@ export default class User extends React.Component {
                     {this.props.username}
                 </div>
                 <div style={{ fontSize: 24, paddingLeft: 80 }} ref={this.timeRef}>
+                    <button onClick={(e) => { this.selectTime(e, "oneDayButton"); }} tag="time_button" id="oneDayButton" className="btn btn-lg btn-primary" >1 Day</button>
+                    <button onClick={(e) => { this.selectTime(e, "oneWeekButton"); }} tag="time_button" id="oneWeekButton" className="btn btn-lg btn-primary" >1 Week</button>
                     <button onClick={(e) => { this.selectTime(e, "oneMonthButton"); }} tag="time_button" id="oneMonthButton" className="btn btn-lg btn-primary" >1 Month</button>
                     <button onClick={(e) => { this.selectTime(e, "sixMonthButton"); }} tag="time_button" id="sixMonthButton" className="btn btn-lg btn-primary" >6 Months</button>
                     <button onClick={(e) => { this.selectTime(e, "twelveMonthButton"); }} tag="time_button" id="twelveMonthButton" className="btn btn-lg btn-primary" >12 Months</button>

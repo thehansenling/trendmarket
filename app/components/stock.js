@@ -17,31 +17,47 @@ export default class Stock extends React.Component {
         this.numberSharesRef = React.createRef();
         this.state = {
             graph_data: this.props.data.graph_data,
-            open: false,
+            openBuy: false,
+            openSell: false,
             current_price: this.props.data.current_price,
-            funds_remaining: this.props.data.funds
+            funds_remaining: this.props.data.funds,
+            user_stocks: this.props.data.user_stocks,
+            funds: this.props.data.funds
         }
-        this.openModal = this.openModal.bind(this);
-        this.closeModal = this.closeModal.bind(this);
+        console.log(this.state)
+        this.openBuyModal = this.openBuyModal.bind(this);
+        this.closeBuyModal = this.closeBuyModal.bind(this);
+        this.openSellModal = this.openSellModal.bind(this);
+        this.closeSellModal = this.closeSellModal.bind(this);
         console.log(this.state.current_price)
         console.log(this.props.data.graph_data)
     }
 
-    openModal() {
-        this.setState({ open: true, funds_remaining:this.props.data.funds });
+    openBuyModal() {
+        this.setState({ openBuy: true });
     }
 
-    closeModal() {
-        this.setState({ open: false });
+    closeBuyModal() {
+        this.setState({ openBuy: false });
+    }
+
+    openSellModal() {
+        this.setState({ openSell: true});
+    }
+
+    closeSellModal() {
+        this.setState({ openSell: false });
     }
 
     changeShares() {
         var funds = this.getRemainingFunds()
+        console.log("SAHHH")
+        console.log(funds)
         this.setState({ funds_remaining: funds })
     }
 
     getRemainingFunds() {
-        var funds = this.props.data.funds - this.numberSharesRef.current.valueAsNumber * this.state.current_price
+        var funds = this.state.funds - this.numberSharesRef.current.valueAsNumber * this.state.current_price.value
         console.log(funds)
         return funds
     }
@@ -63,6 +79,10 @@ export default class Stock extends React.Component {
             time = 2.628e+9 * 12
         } else if (time_name == "sixMonthButton") {
             time = 2.628e+9 * 6
+        } else if (time_name == "oneWeekButton") {
+            time = 8.64e+7 * 7
+        } else if (time_name == "oneDayButton") {
+            time = 8.64e+7
         }
         fetch("/get_data", {
             method: "POST",
@@ -100,21 +120,24 @@ export default class Stock extends React.Component {
                 stock: this.props.data.stock_name,
                 amount: this.numberSharesRef.current.value,
                 operation: "BUY",
-                price: this.state.current_price
+                price: this.state.current_price.value
             })
         }).then(function (response) { return response.json(); })
             .then(function (data) {
-                that.props.data.funds = data.funds
+                
                 if (data.message == "FAILURE") {
                     alert("not enough funds")
+                } else {
+                    console.log(data.funds)
+                    that.setState({funds: data.funds, funds_remaining:data.funds})
                 }
-                console.log(data)
+                console.log(that.state)
             });
-        this.closeModal()
+        this.closeBuyModal()
     }
 
     cancelBuyClicked() {
-        this.closeModal()
+        this.closeBuyModal()
     }
         
     componentDidMount() {
@@ -147,7 +170,7 @@ export default class Stock extends React.Component {
                 console.log(data)
                 this.setState({ current_price: data.current_price })
             });
-        this.openModal()
+        this.openBuyModal()
     }
 
     submitBuy() {
@@ -161,10 +184,12 @@ export default class Stock extends React.Component {
                     {this.props.data.stock_name }
                 </div>
                 <div style={{ fontSize: 24, paddingLeft: 80 }} ref={this.timeRef}>
+                    <button onClick={(e) => { this.selectTime(e, "oneDayButton"); }} tag="time_button" id="oneDayButton" className="btn btn-lg btn-primary" >1 Day</button>
+                    <button onClick={(e) => { this.selectTime(e, "oneWeekButton"); }} tag="time_button" id="oneWeekButton" className="btn btn-lg btn-primary" >1 Week</button>
                     <button onClick={(e) => { this.selectTime(e, "oneMonthButton"); }} tag="time_button" id="oneMonthButton" className="btn btn-lg btn-primary" >1 Month</button>
                     <button onClick={(e) => { this.selectTime(e, "sixMonthButton"); }} tag="time_button" id="sixMonthButton" className="btn btn-lg btn-primary" >6 Months</button>
                     <button onClick={(e) => { this.selectTime(e, "twelveMonthButton"); }} tag="time_button" id="twelveMonthButton" className="btn btn-lg btn-primary" >12 Months</button>
-                    <div style={{ fontSize: 24, paddingLeft: 80 }}> {"Price: " + this.state.current_price} </div>
+                    <div style={{ fontSize: 24, paddingLeft: 80 }}> {"Price: " + this.state.current_price.value} </div>
                 </div>
                 <ResponsiveContainer style={{ display: 'flex', paddingTop: 100 }} width="90%" height="80%">
                     <AreaChart ref={this.lineChartRef}
@@ -198,16 +223,34 @@ export default class Stock extends React.Component {
                     </AreaChart>
                 </ResponsiveContainer>
                 <div style={{ paddingLeft: 80 }}>
-                    <button onClick={this.openModal} type="buy" id="buyButton" className="btn btn-lg btn-primary" >Buy</button>
+                    <button onClick={this.openBuyModal} type="buy" id="buyButton" className="btn btn-lg btn-primary" >Buy</button>
+                    <button onClick={this.openSellModal} type="buy" id="sellButton" className="btn btn-lg btn-primary" >Sell</button>
                 </div>
                 <Popup
-                    open={this.state.open}
-                    onClose={this.closeModal}
+                    open={this.state.openBuy}
+                    onClose={this.closeBuyModal}
                     modal
                     closeOnDocumentClick>
-                    <div style={{ backgroundColor: "#DADADA", borderStyle: "solid", width: "600px", height: "80%" }}>Buy {this.props.data.stock_name} Stock
-                        <div>Available Funds: {this.props.data.funds}</div>
-                        <div>Stock Price: {this.state.current_price}</div>
+                    <div style={{ backgroundColor: "#DADADA", borderStyle: "solid", width: "600px", height: "80%" }}>
+                        <div style = {{fontSize:48}}> Buy {this.props.data.stock_name} Stock </div>
+                        <div>Available Funds: {this.state.funds}</div>
+                        <div>Stock Price: {this.state.current_price.value}</div>
+                        <div>Number of Shares: </div>
+                        <input ref={this.numberSharesRef} onChange={this.changeShares} placeholder="0" type="number" id="number_of_shares" name="fname" />
+                        <div>Funds Remaining: {this.state.funds_remaining}</div>
+                            <button onClick={this.confirmBuyClicked} type="buy" id="confirmBuyButton" className="btn btn-lg btn-primary" >Confirm</button>
+                        <button onClick={this.cancelBuyClicked} type="cancel" id="cancelBuyButton" className="btn btn-lg btn-primary" >Cancel</button>
+                    </div>
+                </Popup>
+                <Popup
+                    open={this.state.openSell}
+                    onClose={this.closeSellModal}
+                    modal
+                    closeOnDocumentClick>
+                    <div style={{ backgroundColor: "#DADADA", borderStyle: "solid", width: "600px", height: "80%" }}>
+                        <div style = {{fontSize:48}}> Sell {this.props.data.stock_name} Stock </div>
+                        <div>Available Funds: {this.state.funds}</div>
+                        <div>Stock Price: {this.state.current_price.value}</div>
                         <div>Number of Shares: </div>
                         <input ref={this.numberSharesRef} onChange={this.changeShares} placeholder="0" type="number" id="number_of_shares" name="fname" />
                         <div>Funds Remaining: {this.state.funds_remaining}</div>

@@ -64,5 +64,13 @@
     "recharts": "^2.8.0",
     "uuid": "^9.0.1"
   },
-  "description": "My webpack project"
+  "description": "My webpack project",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thehansenling/trendmarket.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thehansenling/trendmarket/issues"
+  },
+  "homepage": "https://github.com/thehansenling/trendmarket#readme"
 }
