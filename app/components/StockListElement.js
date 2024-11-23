@@ -22,7 +22,6 @@ export default class StockListElement extends React.Component {
 	}
 
 	setChecked(value) {
-		console.log("CHEKCED")
 		this.inputRef.current.checked = value
 	}
 

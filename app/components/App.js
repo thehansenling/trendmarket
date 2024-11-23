@@ -27,10 +27,6 @@ export default class App extends React.Component {
 		mixpanel.init("63586aff50e8055326d4fb5944633383");
 	}
 
-	handleClick(e) {
-		console.log("CLICKED");
-	}
-
 	componentDidMount() {
 		if (typeof window !== 'undefined') {
 			document.body.style.backgroundColor = "rgb(242, 242, 242)";

@@ -19,7 +19,6 @@ class SearchList extends React.Component {
 	}
 
 	componentDidMount() {
-		console.log(this.searchRef)
 		var that = this
 		this.searchRef.current.addEventListener("keypress", function (event) {
 			// If the user presses the "Enter" key on the keyboard

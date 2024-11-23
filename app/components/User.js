@@ -47,7 +47,6 @@ export default class User extends React.Component {
         if (this.state.graph_data) {
             for (var key in this.state.graph_data) {
                 //can use min length?
-                console.log(key)
                 graph_length = this.state.graph_data[key].length
                 break
             }
@@ -61,7 +60,6 @@ export default class User extends React.Component {
             for (var name_index in names) {
             
                 var name = names[name_index]
-                console.log(name)
                 time = this.state.graph_data[name][i].time
                 time_total += this.state.graph_data[name][i].value * this.getStockAmount(time * 1000, name) + this.getFundAmount(time*1000, name)
                 stock_count += this.props.data.stock_info[name]
@@ -70,7 +68,6 @@ export default class User extends React.Component {
             
             display_data.push({time:time, formattedTime:formattedTime, value:time_total})
         }
-        console.log(display_data)
         this.setState({display_graph:display_data})
     }
 
@@ -98,7 +95,6 @@ export default class User extends React.Component {
         }
         var stock_names = []
         for (var key in this.props.data.stock_info) {
-            console.log(key)
             stock_names.push(key)
         }
         fetch("/get_data", {
@@ -114,7 +110,6 @@ export default class User extends React.Component {
             })
         }).then(function (response) { return response.json(); })
             .then(function (data) {
-                console.log(data)
                 that.setState({
                     graph_data: data.data.graph_data,
                 });// response.graph_data });
@@ -125,12 +120,10 @@ export default class User extends React.Component {
     componentDidMount() {
         var names = []
         for (var key in this.props.data.stock_info) {
-            console.log(key)
             names.push(key)
         }
         this.stocksChanged(names)
         this.setState({stocks: names})
-        console.log(this.timeRef)
         for (var i = 0; i < this.timeRef.current.childNodes.length; i++) {
             var child = this.timeRef.current.childNodes[i]
             if (child.id == "sixMonthButton") {

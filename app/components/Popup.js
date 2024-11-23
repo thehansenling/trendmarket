@@ -7,8 +7,6 @@ export default class Home extends React.Component {
 	}
 
 	handleClick() {
-		alert("SDHSDHSDFG");
-		console.log("PLERASER");
 	}
 
 	render() {

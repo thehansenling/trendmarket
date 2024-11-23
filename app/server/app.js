@@ -74,11 +74,8 @@ function renderPage(url, data) {
 app.get('/', function (req, res) {
 
 	var search_date = (Date.now() - 1.577e+10)
-	console.log(search_date)
 	var transactions_sql = "SELECT DISTINCT stock from transactions ORDER BY timestamp DESC LIMIT 5"
-	console.log(transactions_sql)
 	connection.query(transactions_sql, function (err, transactions_result) {
-		console.log(transactions_result)
 		var stocks = []
 		for (var i = 0; i < transactions_result.length; i++)
 		{
@@ -88,8 +85,7 @@ app.get('/', function (req, res) {
 		var stock_data = {}
 		getInterests(stocks, stock_data, 1.577e+10, function () {
 			var graph_data = []
-			
-			console.log(stock_data)
+
 			var stock_names = []
 			var stocks_length = 0
 			//bad hansen
@@ -107,7 +103,6 @@ app.get('/', function (req, res) {
 			}
 			var data = { graph_data: graph_data,
 					stocks: stock_names }
-			console.log(data)
 			var html = renderPage(req.url, data)
 			res.send(html);
 
@@ -239,7 +234,6 @@ app.get('/stock/:stock', function (req, res) {
 	
 	var user_sql = "SELECT * from accounts WHERE username = '" + req.cookies.username + "'"; 
 	connection.query(user_sql, function (err, result) {
-		console.log(result)
 		var funds = 0
 		if (result.length > 0) {
 			funds = result[0].funds
@@ -250,7 +244,6 @@ app.get('/stock/:stock', function (req, res) {
 			var user_stocks = 0
 			if (result.length > 0) {
 				for (var i = 0; i < result.length; i++) {
-					console.log(result)
 					user_stock_price += result[i].price * result[i].amount
 					user_stocks += result[i].amount
 				}
@@ -295,8 +288,6 @@ app.get('/stock/:stock', function (req, res) {
 									}
 								)
 							}
-							console.log(user_stock_price)
-							console.log(user_stocks)
 							var user_graph_data = []
 							for (var i = 0; i < graph_data.length; i++) {
 								user_graph_data.push({ ...graph_data[i] })
@@ -306,7 +297,6 @@ app.get('/stock/:stock', function (req, res) {
 							if (graph_data[graph_data.length - 1] != undefined) {
 								current_price = graph_data[graph_data.length - 1]
 							}
-							console.log(graph_data)
 							var data = {
 								graph_data: graph_data,
 								stock_name: req.params.stock,
@@ -316,7 +306,6 @@ app.get('/stock/:stock', function (req, res) {
 								funds: funds
 							}
 							//res.send(html);
-							//console.log(graph_data)
 							var html = renderPage(req.url, data)
 							res.send(html);
 						});
@@ -336,11 +325,9 @@ app.post('/current_price', function (req, res) {
 			var day_jsonresults = JSON.parse(day_results);
 			var day_google_data = day_jsonresults["default"]["timelineData"]
 			var day_graph_data = []
-			console.log(day_google_data)
 
 			for (let i = 0; i < day_google_data.length; i++) {
 				var day_entry = day_google_data[i]
-				//console.log(day_entry)
 				if (day_entry.value == undefined) continue
 				var date = new Date(parseFloat(day_entry.time))
 				day_graph_data.push(
@@ -360,13 +347,11 @@ app.post('/buy', function (req, res) {
 	connection.query(select_ledger_sql, function (err, ledger_result) {
 		var update_ledger_sql = "INSERT INTO ledger (username, stock, price, type, amount, timestamp) VALUES ('" + req.cookies.username + "', '" + req.body.stock + "', " + req.body.price.toString() + ", '" + req.body.operation + "', " + req.body.amount + ", " + Date.now() + ")"
 		if (ledger_result.length > 0) {
-			console.log(ledger_result)
 			var ledger = ledger_result[0]//JSON.parse(result[0])
 			update_ledger_sql = "UPDATE ledger SET amount = " + (parseInt(ledger.amount) + parseInt(req.body.amount)).toString() + " WHERE username = '" + req.cookies.username + "' AND stock = '" + req.body.stock + "'";
 		}
 		connection.query(update_ledger_sql, function (err, result) {
 		})
-		console.log(req.body)
 
 		var total_owned = req.body.amount;
 		if (ledger_result.length> 0) {
@@ -375,15 +360,12 @@ app.post('/buy', function (req, res) {
 				total_owned -= 2 * req.body.amount
 			}
 		}
-		console.log(req.body.amount)
 		var funds = req.body.funds - req.body.amount * req.body.price
 		var buy_sql = "INSERT INTO transactions (username, stock, amount, price, operation, total_owned, timestamp, funds_remaining) VALUES ('" + 
 		req.cookies.username + "', '" + req.body.stock + "', "  + req.body.amount + ", " + req.body.price + ", '" + req.body.operation + "', " + total_owned + ", " + Date.now() +", " + funds + ")";
-		console.log(buy_sql)
 		connection.query(buy_sql, function (err, result) {
 			
 			var update_user_sql = "UPDATE accounts SET funds = " + funds + " WHERE username = '" + req.cookies.username + "'";
-			console.log(update_user_sql)
 			if (funds < 0) {
 				res.send({ funds: req.body.funds, message: "FAILURE" })
 			} else {
@@ -428,9 +410,7 @@ function getInterests(stocks, stock_data, time, callback) {
 		callback(stock_data)
 		return;
 	}
-	console.log(stocks)
 	var search_stock = stocks.pop()
-	console.log(search_stock)
 
 	googleTrends.interestOverTime({ keyword: search_stock, startTime: new Date(Date.now() - time), endTime: new Date(), granularTimeResolution: true })
 		.then(function (results) {
@@ -442,14 +422,12 @@ function getInterests(stocks, stock_data, time, callback) {
 }
 
 app.post('/get_data', function (req, res) {
-	console.log("GETDATA")
 	var start_date = new Date(Date.now() - 2.628e+9)
 	if (req.body.time == "twelveMonthButton") {
 		start_date = new Date(Date.now() - (2.628e+9 * 6))
 	} else if (req.body.time == "sixMonthButton") {
 		start_date = new Date(Date.now() - (2.628e+9 * 12))
 	}
-	console.log(req.body)
 	var stock_data = {}
 	
 	getInterests(req.body.stocks, stock_data, req.body.time, function () {
@@ -469,30 +447,11 @@ app.post('/get_data', function (req, res) {
 			}
 		}
 
-		//var jsonresults = JSON.parse(results);
-		//var google_data = jsonresults["default"]["timelineData"]
-		//var graph_data = []
-		//console.log(google_data)
-
-		//for (let i = 0; i < google_data.length; i++) {
-		//	var entry = google_data[i]
-		//	console.log(entry)
-		//	if (entry.value == undefined) continue
-		//	var date = new Date(parseFloat(entry.time))
-		//	graph_data.push(
-		//		{
-		//			time: entry.formattedTime.slice(0, -6),
-		//			value: entry.value[0]
-		//		}
-		//	)
-		//}
 		var data = {
 			graph_data: graph_data,
 			stock_name: req.body.stock,
 			username: req.cookies.username
 		}
-		//res.send(html);
-		console.log(data)
 		res.send({ data: data })
 	})
 
@@ -536,11 +495,8 @@ app.get('/user/:user', function (req, res) {
 	var user_data = {}
 	connection.query(user_sql, function (err, user_result) {
 		var search_date = (Date.now() - 1.577e+10)
-		console.log(search_date)
 		var transactions_sql = "SELECT* from transactions WHERE username = '" + req.params.user + "' AND timestamp > " + search_date.toString() + " ORDER BY timestamp ASC" 
-		console.log(transactions_sql)
 		connection.query(transactions_sql, function (err, transactions_result) {
-			console.log(transactions_result)
 			var transactions_log = [{timestamp:0, funds_remaining: 0}]
 			
 
@@ -560,7 +516,6 @@ app.get('/user/:user', function (req, res) {
 				}
 				transactions_log.push(transaction_entry)
 			}
-			console.log(transactions_log)
 			var user_stock_sql = "SELECT * from ledger WHERE username = '" + req.params.user + "'"
 			connection.query(user_stock_sql, function (err, stock_result) {
 				var stock_info = {}
@@ -580,8 +535,6 @@ app.get('/user/:user', function (req, res) {
 					//console.log(stock_data)
 					//console.log(stock_data["taylor swift"])
 					for (var key in stock_data) {
-						//console.log(Object.keys(stock_data))
-						//console.log(stock_data[key].length)
 						graph_data[key] = []
 						for (var i = 0; i < stock_data[key].length; i++) {
 							graph_data[key].push({
@@ -606,7 +559,6 @@ app.get('/user/:user', function (req, res) {
 						var jsonentry = JSON.parse(JSON.stringify(entry))
 						total_graph_data.push(jsonentry)
 					}
-					console.log(graph_data["taylor swift"])
 					var data = {
 						username: req.params.user,
 						graph_data: graph_data,

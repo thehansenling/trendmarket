@@ -51,14 +51,11 @@ export default class Stock extends React.Component {
 
     changeShares() {
         var funds = this.getRemainingFunds()
-        console.log("SAHHH")
-        console.log(funds)
         this.setState({ funds_remaining: funds })
     }
 
     getRemainingFunds() {
         var funds = this.state.funds - this.numberSharesRef.current.valueAsNumber * this.state.current_price.value
-        console.log(funds)
         return funds
     }
 
@@ -97,7 +94,6 @@ export default class Stock extends React.Component {
             })
         }).then(function (response) { return response.json(); })
         .then(function (data) {
-            console.log(data)
             that.setState({
                 graph_data: data.data.graph_data[that.props.data.stock_name]
             });// response.graph_data });
@@ -128,10 +124,8 @@ export default class Stock extends React.Component {
                 if (data.message == "FAILURE") {
                     alert("not enough funds")
                 } else {
-                    console.log(data.funds)
                     that.setState({funds: data.funds, funds_remaining:data.funds})
                 }
-                console.log(that.state)
             });
         this.closeBuyModal()
     }
@@ -150,9 +144,6 @@ export default class Stock extends React.Component {
                 child.style.backgroundColor = "#DADADA"
             }
         }
-        console.log(this.state.current_price)
-        console.log(this.state.funds_remaining)
-        console.log(this.numberSharesRef)
     }
 
     openBuyMenu() {
@@ -167,7 +158,6 @@ export default class Stock extends React.Component {
             })
         }).then(function (response) { return response.json(); })
             .then(function (data) {
-                console.log(data)
                 this.setState({ current_price: data.current_price })
             });
         this.openBuyModal()

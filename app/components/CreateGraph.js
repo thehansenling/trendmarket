@@ -4,7 +4,6 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 
 export default class Graph extends React.Component {
 	constructor(props) {
-        console.log(props)
 		super(props);
         this.drawAreas = this.drawAreas.bind(this)
         this.drawLinearGradients = this.drawLinearGradients.bind(this)

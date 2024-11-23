@@ -4,7 +4,6 @@ import { createElement } from 'react';
 export default class StockList extends React.Component {
 	constructor(props) {
 		super(props)
-		
 		this.state = { childStocks: [] }
 		this.stockClicked = this.stockClicked.bind(this)
 		this.stockRefs = []
@@ -15,13 +14,11 @@ export default class StockList extends React.Component {
 		console.log(value)
 		if (name == "ALL") {
 			for (var i = 0; i < this.stockRefs.length; i++) {
-				console.log(this.stockRefs[i])
 				this.stockRefs[i].current.setChecked(value)
 			}
 		}
 		var checked = []
 		for (var i = 0; i < this.stockRefs.length; i++) {
-			console.log(this.stockRefs[i])
 			if (this.stockRefs[i].current.getChecked()) {
 				checked.push(this.stockRefs[i].current.props.name)
 			}
@@ -33,12 +30,9 @@ export default class StockList extends React.Component {
 	componentDidMount() {
 		var childStocks = []
 		var that = this
-		console.log(this.props.data)
 		childStocks.push(createElement(StockListElement, { name: "ALL", clickCallback: that.stockClicked }))
 		if (this.props.data.stocks != undefined) {
 			for (var i = 0; i < this.props.data.stocks.length; i++) {
-				console.log(this.props.data.stocks[i])
-				console.log(this.stockClicked)
 				var ref = React.createRef()
 				this.stockRefs.push(ref)
 				var newprops = { name: this.props.data.stocks[i], clickCallback: that.stockClicked }
@@ -46,11 +40,8 @@ export default class StockList extends React.Component {
 				
 			}
 		}
-		console.log(this.stockRefs)
 		this.setState({ childStocks: childStocks })
 	}
-
-
 
 	render ()
 	{
